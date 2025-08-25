@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name = "viewport" content="width=device-width, initial-scale=1">
+    <title>Codex</title>
+    <link rel="stylesheet" href="./styles/main.css">
+</head>
+<body>
+    <header> 
+        <div class="brand">Codex</div>
+        <div class="controls">
+            <label for="lang" >Language</label>
+            <select id="lang">
+                <option value="python">Python</option>
+                <option value="javascript">JavaScript</option>
+                <option value="cpp">C++</option>
+            </select>
+            <button id="analyze">Analyze</button>
+        </div>
+    </header>
+
+    <main role="main">
+        <section class="editor-pane">
+            <label for="editor">Code Editor</label>
+            <textarea id="editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="Paste code here..."></textarea>
+        </section>
+        <section class="results-pane" role="complementary" aria-label="Analysis results">
+            <h2 id="metrics-title">Metrics</h2>
+            <div id="metrics" aria-labelledby="metrics-title" tabindex="-1"></div>
+
+            <h2 id="issues-title">Issues</h2>
+            <div id="issues" aria-labelledby="issues-title" tabindex="-1"></div>
+
+
+            <h2 id="explanation-title">Explanation</h2>
+            <div id="explanation" aria-labelledby="explanation-title" tabindex="-1"></div>
+        </section>
+    </main>
+    <script src="./vendor/web-tree-sitter.js"></script>
+    <script type="module" src="./src/main.js"></script>
+</body>
+</html>
