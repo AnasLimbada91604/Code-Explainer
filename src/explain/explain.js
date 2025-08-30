@@ -4,6 +4,7 @@ function gradeComplexity(cc) {
   if (cc <= 12) return 'complex';
   return 'very complex';
 }
+
 export function explainFunction(m) {
   const label = gradeComplexity(m.cc);
   const paramWord = m.params === 1 ? 'parameter' : 'parameters';

@@ -1,72 +1,79 @@
-/* Reset-ish */
-* { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  height: 100vh;
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
+  height: 100vh;
 }
 
-/* Header */
 header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 1rem;
-  border-bottom: 1px solid #ddd;
-  background: #f9fafb;
+  background: #333;
+  color: #fff;
 }
-header .brand {
+
+.brand {
   font-weight: bold;
   font-size: 1.2rem;
 }
-header .controls {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
 
-/* Main split layout */
 main {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 1fr; /* editor | results */
-  min-height: 0; /* important for textarea scroll */
-}
-
-/* Editor pane */
-.editor-pane {
-  border-right: 1px solid #ddd;
-  padding: 0.75rem;
   display: flex;
-  flex-direction: column;
-}
-#editor {
   flex: 1;
-  width: 100%;
-  resize: none;
-  font-family: ui-monospace, Menlo, Consolas, monospace;
-  font-size: 14px;
-  line-height: 1.4;
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
 }
 
-/* Results pane */
+.editor-pane,
 .results-pane {
-  padding: 0.75rem;
-  overflow-y: auto;
+  flex: 1;
+  padding: 1rem;
+  box-sizing: border-box;
 }
-.results-pane h2 {
-  font-size: 1rem;
-  margin-top: 1rem;
-  margin-bottom: 0.25rem;
-  border-bottom: 1px solid #eee;
+
+textarea {
+  width: 100%;
+  height: 90%;
+  font-family: monospace;
+  font-size: 14px;
 }
-.results-pane div {
-  margin-bottom: 1rem;
-  font-family: ui-monospace, Menlo, Consolas, monospace;
-  font-size: 13px;
-  white-space: pre-wrap;
+
+.results-pane .metrics {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: .5rem;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-size: 0.95rem;
 }
+
+.results-pane .metrics caption {
+  text-align: left;
+  font-weight: 600;
+  margin-bottom: .25rem;
+}
+
+.results-pane .metrics th,
+.results-pane .metrics td {
+  border: 1px solid #e1e1e1;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.results-pane .metrics thead th {
+  background: #f7f7f7;
+}
+
+.results-pane .metrics tfoot td {
+  font-weight: 600;
+  background: #fafafa;
+}
+
+.explanations {
+  margin: .5rem 0 0;
+  padding-left: 1.2rem;
+}
+.explanations li { margin: .25rem 0; }
+
+

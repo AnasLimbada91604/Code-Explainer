@@ -1,6 +1,5 @@
-
 export const THRESHOLDS = {
-  LONG_FUNC_LOC: 60,
+  LONG_FUNC_LOC: 30,
   HIGH_CC: 10,
   MANY_PARAMS: 5,
 };
@@ -20,7 +19,7 @@ export function runRules(m) {
     issues.push({
       rule: 'too-many-params',
       severity: 'warn',
-      message: `“${m.name}” has ${m.params} parameters. Consider grouping into an object or using defaults.`,
+      message: `“${m.name}” has ${m.params} parameters. Consider grouping.`,
     });
   }
 
@@ -28,7 +27,7 @@ export function runRules(m) {
     issues.push({
       rule: 'high-complexity',
       severity: 'warn',
-      message: `“${m.name}” has high cyclomatic complexity (${m.cc}). Consider splitting branches/loops.`,
+      message: `“${m.name}” has high cyclomatic complexity (${m.cc}).`,
     });
   }
 

@@ -1,6 +1,12 @@
 import { setLang, setCode, setParser, setAST, get } from './state.js';
 import { initTS, createParser } from './parser/treesitter-loader.js';
-import { functionsIn, guessParams, measureLoc, measureCyclomatic } from './analysis/metrics.js';
+import {
+  functionsIn,
+  measureLOC,
+  measureFuncLOC,
+  measureCyclomatic,
+  guessParams
+} from './analysis/metrics.js';
 import { runRules } from './analysis/rules.js';
 import { explainFunction } from './explain/explain.js';
 
@@ -11,10 +17,7 @@ const metricsEl = document.getElementById('metrics');
 const issuesEl = document.getElementById('issues');
 const explanationEl = document.getElementById('explanation');
 
-const pad = (s, n) => (String(s) + ' '.repeat(n)).slice(0, n);
-
 function nameFor(fn, lang) {
-  // Python
   if (lang === 'python') {
     for (let i = 0; i < fn.namedChildCount; i++) {
       const c = fn.namedChild(i);
@@ -22,7 +25,6 @@ function nameFor(fn, lang) {
     }
     return '(anonymous)';
   }
-  // JavaScript
   if (lang === 'javascript') {
     for (let i = 0; i < fn.namedChildCount; i++) {
       const c = fn.namedChild(i);
@@ -30,7 +32,6 @@ function nameFor(fn, lang) {
     }
     return '(anonymous)';
   }
-  // C++
   if (lang === 'cpp') {
     const stack = [fn];
     while (stack.length) {
@@ -43,46 +44,58 @@ function nameFor(fn, lang) {
   return '(anonymous)';
 }
 
-async function boot() {
-  await initTS();
-  setLang(langEl.value);
-  const parser = await createParser(langEl.value);
-  setParser(parser);
-  if (!editorEl.value) editorEl.value = 'def add(a,b):\n    return a+b\n';
+/** Renders a proper metrics table with header + footer */
+function renderMetricsTable(rows, fileLoc, lang) {
+  const body = rows.map(r => `
+    <tr>
+      <td>${r.name}</td>
+      <td>${r.loc}</td>
+      <td>${r.cc}</td>
+      <td>${r.params}</td>
+    </tr>
+  `).join('');
+
+  metricsEl.innerHTML = `
+    <table class="metrics">
+      <caption>Language: ${lang}</caption>
+      <thead>
+        <tr>
+          <th>Function</th>
+          <th>LOC</th>
+          <th>CC</th>
+          <th>Params</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${body}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4">File LOC: ${fileLoc}</td>
+        </tr>
+      </tfoot>
+    </table>
+  `;
 }
-boot();
 
-langEl.addEventListener('change', async () => {
-  const newValue = langEl.value;
-  setLang(newValue);
-  const p = await createParser(newValue);
-  setParser(p);
-  metricsEl.textContent = `Language loaded: ${newValue}`;
-  issuesEl.textContent = '';
-  explanationEl.textContent = '';
-  console.log('Language loaded:', newValue);
-});
-
-// analyze button handler
-analyzeEl.addEventListener('click', async () => {
-  const src = editorEl.value || '';
-  setCode(src);
-
-  const p = get().parser;
-  if (!p) {
-    metricsEl.textContent = 'No parser loaded. Pick a language first.';
-    issuesEl.textContent = '';
-    explanationEl.textContent = '';
-    return;
-  }
-
+async function analyzeNow() {
   try {
-    const tree = p.parse(get().code);
+    const parser = get('parser');
+    if (!parser) {
+      metricsEl.textContent = 'No parser loaded.';
+      issuesEl.textContent = '';
+      explanationEl.textContent = '';
+      return;
+    }
+
+    const code = editorEl.value ?? '';
+    setCode(code);
+
+    const tree = parser.parse(code);
     setAST(tree);
 
-    const ast = get().ast;
-    const lang = get().currentLang;
-    const funcs = functionsIn(ast, lang);
+    const lang = get('currentLang');
+    const funcs = functionsIn(tree, lang);
 
     if (funcs.length === 0) {
       metricsEl.textContent = 'No functions detected.';
@@ -93,35 +106,71 @@ analyzeEl.addEventListener('click', async () => {
 
     const rows = funcs.map(fn => ({
       name: nameFor(fn, lang),
-      loc: measureLoc(editorEl.value, fn),
+      loc: measureFuncLOC(code, fn),
       cc: measureCyclomatic(fn, lang),
-      params: guessParams(fn, lang).length
+      params: guessParams(fn, lang).length,
     }));
 
-    // --- render Metrics (simple text table) ---
-    const header = `${pad('Function', 22)}  ${pad('LOC', 4)}  ${pad('CC', 4)}  ${pad('Params', 6)}`;
-    const lines = rows.map(r =>
-      `${pad(r.name, 22)}  ${pad(r.loc, 4)}  ${pad(r.cc, 4)}  ${pad(r.params, 6)}`
-    );
-    metricsEl.textContent = [header, ...lines].join('\n');
+    // Metrics table
+    const fileLoc = measureLOC(code);
+    renderMetricsTable(rows, fileLoc, lang);
 
+    // Issues (keep simple text for now)
     const allIssues = rows.flatMap(r => runRules(r));
-    if (allIssues.length === 0) {
-      issuesEl.textContent = 'No issues found.';
-    } else {
-      const issueLines = allIssues.map(i => {
-        const tag = i.severity === 'warn' ? '[WARN]' : '[INFO]';
-        return `${tag} ${i.message}`;
-      });
-      issuesEl.textContent = issueLines.join('\n');
-    }
+    issuesEl.textContent = allIssues.length
+      ? allIssues.map(i => `${i.severity === 'warn' ? '[WARN]' : '[INFO]'} ${i.message}`).join('\n')
+      : 'No issues found.';
 
-    const explanations = rows.map(r => '• ' + explainFunction(r));
-    explanationEl.textContent = explanations.join('\n\n');
+    // Explanations as bullet list
+    explanationEl.innerHTML = `
+      <ul class="explanations">
+        ${rows.map(r => `<li>${explainFunction(r)}</li>`).join('')}
+      </ul>
+    `;
   } catch (err) {
-    console.error(err);
-    metricsEl.textContent = `Parse error: ${err.message || err}`;
+    console.error('Analyze failed:', err);
+    metricsEl.textContent = 'Analyze failed. Check console.';
     issuesEl.textContent = '';
     explanationEl.textContent = '';
   }
+}
+
+async function boot() {
+  await initTS();
+  setLang(langEl.value);
+  const parser = await createParser(langEl.value);
+  setParser(parser);
+
+  // Optional starter snippet
+  if (!editorEl.value) {
+    editorEl.value = 'def add(a, b):\n    return a + b\n';
+  }
+}
+boot();
+
+// Keep code in state
+editorEl.addEventListener('input', () => { setCode(editorEl.value); });
+
+// Analyze button
+analyzeEl.addEventListener('click', analyzeNow);
+
+// Re-load parser on language change, then re-analyze
+langEl.addEventListener('change', async () => {
+  const newValue = langEl.value;
+  setLang(newValue);
+  try {
+    const p = await createParser(newValue);
+    setParser(p);
+    await analyzeNow();
+  } catch (err) {
+    console.error('Failed to load parser:', err);
+    metricsEl.textContent = 'Error loading parser';
+    issuesEl.textContent = '';
+    explanationEl.textContent = '';
+  }
+});
+
+// Ctrl/Cmd+Enter shortcut
+editorEl.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') analyzeNow();
 });
