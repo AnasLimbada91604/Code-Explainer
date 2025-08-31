@@ -1,35 +1,29 @@
-export const THRESHOLDS = {
-  LONG_FUNC_LOC: 30,
-  HIGH_CC: 10,
-  MANY_PARAMS: 5,
-};
+function runRules(row) {
+  const out = [];
 
-export function runRules(m) {
-  const issues = [];
+  if ((row.notes || []).some(n => /Recursive/.test(n)) &&
+      !(row.notes || []).some(n => /base case/i.test(n))) {
+    out.push({
+      severity: 'warn',
+      message: 'Recursive function without an obvious base case.'
+    });
+  }
 
-  if (m.loc > THRESHOLDS.LONG_FUNC_LOC) {
-    issues.push({
-      rule: 'long-function',
+  if (row.params >= 4) {
+    out.push({
       severity: 'info',
-      message: `“${m.name}” is long (${m.loc} LOC). Consider extracting helpers.`,
+      message: `Function has ${row.params} parameters — consider refactoring.`
     });
   }
 
-  if (m.params > THRESHOLDS.MANY_PARAMS) {
-    issues.push({
-      rule: 'too-many-params',
-      severity: 'warn',
-      message: `“${m.name}” has ${m.params} parameters. Consider grouping.`,
+  if ((row.notes || []).some(n => /constant upper bound/i.test(n))) {
+    out.push({
+      severity: 'info',
+      message: 'Loop has constant bound — contributes O(1).'
     });
   }
 
-  if (m.cc > THRESHOLDS.HIGH_CC) {
-    issues.push({
-      rule: 'high-complexity',
-      severity: 'warn',
-      message: `“${m.name}” has high cyclomatic complexity (${m.cc}).`,
-    });
-  }
-
-  return issues;
+  return out;
 }
+
+export { runRules };

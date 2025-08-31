@@ -1,12 +1,16 @@
-function gradeComplexity(cc) {
-  if (cc <= 3) return 'simple';
-  if (cc <= 7) return 'moderate';
-  if (cc <= 12) return 'complex';
-  return 'very complex';
+// src/explain/explain.js
+function explainFunction(row) {
+  const name   = row?.name ?? '(anonymous)';
+  const loc    = row?.loc ?? 0;
+  const params = row?.params ?? 0;
+  const bigO   = row?.bigO ?? 'O(1)';
+
+  let s = `Function “${name}” is ${loc} lines long, has ${params} parameter${params === 1 ? '' : 's'}, and estimated time complexity ${bigO}.`;
+
+  if (row?.notes && row.notes.length) {
+    s += ` Warnings: ${row.notes.join(' ')}.`;
+  }
+  return s;
 }
 
-export function explainFunction(m) {
-  const label = gradeComplexity(m.cc);
-  const paramWord = m.params === 1 ? 'parameter' : 'parameters';
-  return `Function “${m.name}” is ${m.loc} lines long, has ${m.params} ${paramWord}, and a cyclomatic complexity of ${m.cc} (${label}).`;
-}
+export { explainFunction };
